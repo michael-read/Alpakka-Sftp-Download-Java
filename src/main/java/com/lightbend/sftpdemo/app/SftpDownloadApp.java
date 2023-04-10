@@ -36,7 +36,7 @@ public class SftpDownloadApp {
                             log.info("The file transfer result: Success: {}, Message: {}", reply.isSuccess(), reply.getResponse());
                         }
                         else {
-                            log.error("The file transfer failed: {}", failure);
+                            log.error("The file transfer failed: {}", failure.getMessage(), failure);
                         }
                         context.getSystem().terminate();
                     });

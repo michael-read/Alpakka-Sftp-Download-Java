@@ -9,11 +9,11 @@ import akka.actor.typed.javadsl.Receive;
 import akka.japi.Pair;
 import akka.stream.IOResult;
 import akka.stream.alpakka.ftp.FtpCredentials;
+import akka.stream.alpakka.ftp.FtpFile;
 import akka.stream.alpakka.ftp.SftpSettings;
 import akka.stream.alpakka.ftp.javadsl.Sftp;
 import akka.stream.javadsl.FileIO;
 import akka.stream.javadsl.Sink;
-import com.lightbend.sftpdemo.app.SftpDownloadApp;
 import com.typesafe.config.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +40,8 @@ public class SftpDownloadActor extends AbstractBehavior<SftpDownloadActor.Comman
             this.targetDir = targetDir;
             this.replyTo = replyTo;
         }
-
-    };
-    public static enum Stop implements Command {INSTANCE};
+    }
+    public enum Stop implements Command {INSTANCE}
     public static class TransferResponse implements Command {
         private final boolean success;
         private final String response;
@@ -58,7 +57,7 @@ public class SftpDownloadActor extends AbstractBehavior<SftpDownloadActor.Comman
     }
 
     public static Behavior<Command> create() {
-        return Behaviors.setup(ctx -> new SftpDownloadActor(ctx));
+        return Behaviors.setup(SftpDownloadActor::new);
     }
 
     private SftpDownloadActor(ActorContext<Command> context) {
@@ -82,7 +81,7 @@ public class SftpDownloadActor extends AbstractBehavior<SftpDownloadActor.Comman
 
         final CompletionStage<List<Pair<String, IOResult>>> fetchedFiles =
                 Sftp.ls(msg.sourceDir, sftpSettings)
-                        .filter(sftpFile -> sftpFile.isFile())
+                        .filter(FtpFile::isFile)
                         .mapAsyncUnordered(
                                 parallelism,
                                 sftpFile -> {
@@ -99,12 +98,10 @@ public class SftpDownloadActor extends AbstractBehavior<SftpDownloadActor.Comman
         fetchedFiles
                 .whenComplete(
                         (res, ex) -> {
-                            TransferResponse response = null;
+                            TransferResponse response;
                             if (res != null) {
                                 if (!res.isEmpty()) {
-                                    res.forEach( resultPair -> {
-                                        log.info("File: {}, outcome {}", resultPair.first(), resultPair.second());
-                                    });
+                                    res.forEach( resultPair -> log.info("File: {}, outcome {}", resultPair.first(), resultPair.second()));
                                     String respMsg = "all files fetched";
                                     // context is gone by now so use global
                                     log.info(respMsg);
@@ -136,7 +133,7 @@ public class SftpDownloadActor extends AbstractBehavior<SftpDownloadActor.Comman
         int port = config.getInt("app.port");
         String username = config.getString("app.username");
         String password = config.getString("app.password");
-        SftpSettings sftpSettings = null;
+        SftpSettings sftpSettings;
 
         try {
             sftpSettings = SftpSettings.create(InetAddress.getByName(hostname))
