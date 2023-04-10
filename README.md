@@ -1,6 +1,8 @@
 # Alpakka Sftp Download Example
 
-This is a simple Akka Java 11 application that leverages Akka Streams with the [Alpakka FTP](https://doc.akka.io/docs/alpakka/current/ftp.html) connector. The application takes its configuration from `application.conf` and then tranfers files from the source directory to the destination directory.
+This is a simple Akka Java 11 application that leverages Akka Streams with the [Alpakka FTP](https://doc.akka.io/docs/alpakka/current/ftp.html) connector. 
+
+The application takes its configuration from `application.conf` and then transfers files from the source directory to the destination directory.
 
 Build is accomplished through the `sbt`.
 
